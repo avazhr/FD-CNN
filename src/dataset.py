@@ -13,9 +13,9 @@ import os
 import pandas as pd
 import numpy as np
 
-DATA_PATH = '../data/dataset'
-TRAIN_DATA = '../data/train.csv'
-TEST_DATA = '../data/test.csv'
+DATA_PATH = './data/dataset'
+TRAIN_DATA = './data/train.csv'
+TEST_DATA = './data/test.csv'
 
 class DataSet:
     # 定义私有属性

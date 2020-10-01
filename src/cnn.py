@@ -5,8 +5,11 @@ CNN模型
 '''
 import time
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+#import tensorflow as tf
 import dataset
+
+tf.compat.v1.disable_eager_execution()
 
 MODEL_SEVE_PATH = '../model/model.ckpt'
 # Label = {'STD':1,'WAL':2,'JOG':3,'JUM':4,'STU':5,'STN':6,'SCH':7,'SIT':8,'CHU':9,
@@ -144,7 +147,7 @@ def train_model():
         accuracy = tf.reduce_mean(correct_prediction)
         tf.summary.scalar("accuracy", accuracy)
 
-    data = dataset.DataSet('../data/dataset',CLASS_LIST)
+    data = dataset.DataSet('./data/dataset',CLASS_LIST)
     saver = tf.train.Saver()
     merged = tf.summary.merge_all()
 
@@ -156,7 +159,7 @@ def train_model():
             batch_x, batch_y = data.next_batch(BATCH_SIZE)
             if step%100==0:
                 train_accuracy = accuracy.eval(feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
-                print('训练第 %d次, 准确率为 %f' % (step, train_accuracy))
+                print(' %d th training with an accuracy of %f' % (step, train_accuracy))
                 summ = sess.run(merged, feed_dict={x: batch_x, y: batch_y,keep_prob: 1.0})
                 train_writer.add_summary(summ, global_step=step)
 
@@ -164,14 +167,14 @@ def train_model():
 
         train_writer.close()
         save_path = saver.save(sess, MODEL_SEVE_PATH)
-        print("训练完毕,权重保存至:%s"%(save_path))
+        print("Training completed, weight is saved to:%s"%(save_path))
 
 def test_model():
     '''
     使用测试数据集对训练好的模型进行测试
     :return: 测试结果
     '''
-    data = dataset.DataSet('../data/dataset', CLASS_LIST, True)
+    data = dataset.DataSet('./data/dataset', CLASS_LIST, True)
     test_x, test_y = data.get_test_data()
 
     tf.reset_default_graph()
@@ -191,10 +194,10 @@ def test_model():
     with tf.Session() as sess:
         saver.restore(sess, "../model/model.ckpt")
         p_y = np.argmax(sess.run(y_,feed_dict={x: test_x,keep_prob: 1.0}),1)
-        print("准确率为 %f" % accuracy.eval(feed_dict={x: test_x, y: test_y, keep_prob: 1.0}))
+        print("The accuracy is: %f" % accuracy.eval(feed_dict={x: test_x, y: test_y, keep_prob: 1.0}))
 
     test_time = str(time.time() - start_time)
-    print('测试时间为：',test_time)
+    print('The testing time is：',test_time)
 
     g_truth = np.argmax(test_y,1)
     avg_sensitivity = 0
