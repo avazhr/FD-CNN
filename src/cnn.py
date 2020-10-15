@@ -15,11 +15,13 @@ MODEL_SEVE_PATH = '../model/model.ckpt'
 # Label = {'STD':1,'WAL':2,'JOG':3,'JUM':4,'STU':5,'STN':6,'SCH':7,'SIT':8,'CHU':9,
 #          'CSI':10,'CSO':11,'LYI':12,'FOL':0,'FKL':0,'BSC':0,'SDL':0}
 
-Label = {0:'Fall',1:'Stand',2:'Walk',3:'Jog',4:'Jump',5:'up_stair',6:'down_stair',
-         7:'stand2sit',8:'sitting',9:'sit2stand',10:'CSI',11:'CSO',12:'LYI'}
+# Label = {0:'Fall',1:'Stand',2:'Walk',3:'Jog',4:'Jump',5:'up_stair',6:'down_stair',
+#          7:'stand2sit',8:'sitting',9:'sit2stand',10:'CSI',11:'CSO',12:'LYI'}
+Label = {2:'Walk',5:'up_stair',6:'down_stair',
+         9:'sit2stand'}
 
 # 超参数
-CLASS_LIST = [0,2,3,4,5,6,7,9]
+CLASS_LIST = [2,5,6,9]
 CLASS_NUM = len(CLASS_LIST)
 LEARNING_RATE = 0.001
 TRAIN_STEP = 10000
@@ -123,58 +125,60 @@ def fall_net(x):
     return fc2_output,keep_prob
 
 
-def train_model():
-    '''
-    训练模型,并将训练的模型参数进行保存
-    :return: 返回训练好模型参数
-    '''
-    with tf.name_scope('input_dataset'):
-        x = tf.placeholder(tf.float32,[None,1200])
-        y = tf.placeholder(tf.float32,[None,CLASS_NUM])
-    y_,keep_prob = fall_net(x)
+# def train_model():
+#     '''
+#     训练模型,并将训练的模型参数进行保存
+#     :return: 返回训练好模型参数
+#     '''
+#     with tf.name_scope('input_dataset'):
+#         x = tf.placeholder(tf.float32,[None,1200])
+#         y = tf.placeholder(tf.float32,[None,CLASS_NUM])
+#     y_,keep_prob = fall_net(x)
 
-    with tf.name_scope('loss'):
-        cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y,logits=y_)
-        loss = tf.reduce_mean(cross_entropy)
-        tf.summary.scalar("loss", loss)
+#     with tf.name_scope('loss'):
+#         cross_entropy = tf.nn.softmax_cross_entropy_with_logits(labels=y,logits=y_)
+#         loss = tf.reduce_mean(cross_entropy)
+#         tf.summary.scalar("loss", loss)
 
-    with tf.name_scope('optimizer'):
-        train = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
+#     with tf.name_scope('optimizer'):
+#         train = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss)
 
-    with tf.name_scope('accuracy'):
-        correct_prediction = tf.equal(tf.argmax(y_,1),tf.argmax(y,1))
-        correct_prediction = tf.cast(correct_prediction,tf.float32)
-        accuracy = tf.reduce_mean(correct_prediction)
-        tf.summary.scalar("accuracy", accuracy)
+#     with tf.name_scope('accuracy'):
+#         correct_prediction = tf.equal(tf.argmax(y_,1),tf.argmax(y,1))
+#         correct_prediction = tf.cast(correct_prediction,tf.float32)
+#         accuracy = tf.reduce_mean(correct_prediction)
+#         tf.summary.scalar("accuracy", accuracy)
 
-    data = dataset.DataSet('./data/dataset',CLASS_LIST)
-    saver = tf.train.Saver()
-    merged = tf.summary.merge_all()
+#     data = dataset.DataSet('./data/dataset',CLASS_LIST)
+#     saver = tf.train.Saver()
+#     merged = tf.summary.merge_all()
 
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        train_writer = tf.summary.FileWriter("../log/", sess.graph)
+#     with tf.Session() as sess:
+#         sess.run(tf.global_variables_initializer())
+#         train_writer = tf.summary.FileWriter("../log/", sess.graph)
 
-        for step in range(1, TRAIN_STEP+1):
-            batch_x, batch_y = data.next_batch(BATCH_SIZE)
-            if step%100==0:
-                train_accuracy = accuracy.eval(feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
-                print(' %d th training with an accuracy of %f' % (step, train_accuracy))
-                summ = sess.run(merged, feed_dict={x: batch_x, y: batch_y,keep_prob: 1.0})
-                train_writer.add_summary(summ, global_step=step)
+#         for step in range(1, TRAIN_STEP+1):
+#             batch_x, batch_y = data.next_batch(BATCH_SIZE)
+#             if step%100==0:
+#                 train_accuracy = accuracy.eval(feed_dict={x: batch_x, y: batch_y, keep_prob: 1.0})
+#                 print(' %d th training with an accuracy of %f' % (step, train_accuracy))
+#                 summ = sess.run(merged, feed_dict={x: batch_x, y: batch_y,keep_prob: 1.0})
+#                 train_writer.add_summary(summ, global_step=step)
 
-            train.run(feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
+#             train.run(feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
 
-        train_writer.close()
-        save_path = saver.save(sess, MODEL_SEVE_PATH)
-        print("Training completed, weight is saved to:%s"%(save_path))
+#         train_writer.close()
+#         save_path = saver.save(sess, MODEL_SEVE_PATH)
+#         print("Training completed, weight is saved to:%s"%(save_path))
 
 def test_model():
     '''
     使用测试数据集对训练好的模型进行测试
     :return: 测试结果
     '''
+    print("Testing model...")
     data = dataset.DataSet('./data/dataset', CLASS_LIST, True)
+    #data = dataset.DataSet('./data/processed1889.csv', True)
     test_x, test_y = data.get_test_data()
 
     tf.reset_default_graph()
@@ -260,7 +264,7 @@ def demo_run(data):
 
 if __name__=='__main__':
 
-    train_model()
+    #train_model()
     test_model()
 
 
